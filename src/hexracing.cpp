@@ -261,12 +261,14 @@ void render(SDL_Renderer* renderer, GameState* gameState)
 
     // Draw Text
     text(renderer, "HexRacer!", 650, 10);
-    char mouseXStr[4];
-    char mouseYStr[4];
-    _itoa_s(mouseX, mouseXStr, 10);
-    _itoa_s(mouseY, mouseYStr, 10);
-    text(renderer, mouseXStr, 650, 50);
-    text(renderer, mouseYStr, 750, 50);
+    char p1VeloStr[4];
+    char p2VeloStr[4];
+    _itoa_s(gameState->playerVelocity[0], p1VeloStr, 10);
+    _itoa_s(gameState->playerVelocity[1], p2VeloStr, 10);
+    text(renderer, "P1Spd:", 650, 50);
+    text(renderer, p1VeloStr, 750, 50);
+    text(renderer, "P2Spd:", 650, 100);
+    text(renderer, p2VeloStr, 750, 100);
 
     SDL_RenderPresent(renderer);
 }

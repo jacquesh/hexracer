@@ -41,7 +41,7 @@ struct Map
 
 struct GameState
 {
-    Map* map;
+    Map map;
 
     int currentPlayer;
     int playerVelocity[2];
@@ -70,20 +70,40 @@ int getUIntFromByteStream(FILE* inFile)
     return result;
 }
 
-void loadMap(char* filename, Map* map)
+void loadMap(char* filename, GameState* gameState)
 {
     FILE* inFile;
     fopen_s(&inFile, filename, "r");
-
-    map->width = getUIntFromByteStream(inFile);
-    map->height = getUIntFromByteStream(inFile);
-    map->data = malloc(map->width * map->height);
-    for(int y=0; y<map->height; ++y)
+    
+    // Load Map Data
+    gameState->map.width = getUIntFromByteStream(inFile);
+    gameState->map.height = getUIntFromByteStream(inFile);
+    gameState->map.data = malloc(gameState->map.width * gameState->map.height);
+    for(int y=0; y<gameState->map.height; ++y)
     {
-        fread((void*)((char*)map->data + map->width*y), 1, map->width, inFile);
+        fread((void*)((char*)gameState->map.data + gameState->map.width*y), 1, gameState->map.width, inFile);
         fgetc(inFile); // Skip the newline byte
     }
 	fclose(inFile);
+
+    // Assign player start locations
+    for(int y=0; y<gameState->map.height; ++y)
+    {
+        for(int x=0; x<gameState->map.width; ++x)
+        {
+            char c = *((char*)gameState->map.data + gameState->map.width*y + x);
+            if(c == 'A')
+            {
+                gameState->playerLoc[0].x = x;
+                gameState->playerLoc[0].y = y;
+            }
+            else if(c == 'B')
+            {
+                gameState->playerLoc[1].x = x;
+                gameState->playerLoc[1].y = y;
+            }
+        }
+    }
 }
 
 // TODO: Implement this properly (at the moment it's SUPER inefficient)
@@ -189,8 +209,8 @@ void render(SDL_Renderer* renderer, GameState* gameState)
                 centreY += (int)(hexHeight/2.0f);
             }
             drawRegularHex(renderer, centreX, centreY, hexSize);
-            
-            char hexType = *((char*)gameState->map->data + (y*gameState->map->width + x));
+
+            char hexType = *((char*)gameState->map.data + (y*gameState->map.width + x));
             if(hexType != 'X')
             {
                 int screenX = hexToScreenX(x);
@@ -309,18 +329,12 @@ int main(int argc, char** argv)
         SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, 0);
         if(renderer)
         {
-            Map map;
-            loadMap("test.map", &map);
-
             GameState gameState;
+            loadMap("test.map", &gameState);
+            
             gameState.currentPlayer = 0;
             gameState.playerVelocity[0] = 1;
             gameState.playerVelocity[1] = 1;
-            gameState.playerLoc[0].x = 0;
-            gameState.playerLoc[0].y = 0;
-            gameState.playerLoc[1].x = 1;
-            gameState.playerLoc[1].y = 0;
-            gameState.map = &map;
 
             font = TTF_OpenFont("ubuntumono.ttf", fontSize);
 
@@ -336,7 +350,7 @@ int main(int argc, char** argv)
                 render(renderer, &gameState);
             }
 
-            free(map.data);
+            free(gameState.map.data);
         }
         else
         {

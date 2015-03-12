@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <time.h>
 #include <math.h>
 
 typedef int8_t int8;
@@ -263,17 +264,23 @@ void render(SDL_Renderer* renderer, GameState* gameState)
     text(renderer, "HexRacer!", 650, 10);
     char p1VeloStr[4];
     char p2VeloStr[4];
+    char toPlayStr[4];
     _itoa_s(gameState->playerVelocity[0], p1VeloStr, 10);
     _itoa_s(gameState->playerVelocity[1], p2VeloStr, 10);
+    _itoa_s(gameState->currentPlayer+1, toPlayStr, 10);
+
     text(renderer, "P1Spd:", 650, 50);
     text(renderer, p1VeloStr, 750, 50);
     text(renderer, "P2Spd:", 650, 100);
     text(renderer, p2VeloStr, 750, 100);
+    text(renderer, "To Play:", 650, 200);
+    text(renderer, "Player ", 650, 230);
+    text(renderer, toPlayStr, 760, 230);
 
     SDL_RenderPresent(renderer);
 }
 
-void SDLHandleEvent(SDL_Event* event)
+void SDLHandleEvent(SDL_Event* event, GameState* gameState)
 {
     switch(event->type)
     {
@@ -285,9 +292,23 @@ void SDLHandleEvent(SDL_Event* event)
         case SDL_KEYUP:
         {
             SDL_Keycode keyCode = event->key.keysym.sym;
-            if(keyCode == SDLK_w && !event->key.repeat && event->key.state == SDL_PRESSED)
+            if(keyCode == SDLK_a && !event->key.repeat && event->key.state == SDL_PRESSED)
             {
-                printf("W\n");
+                printf("Accelerate\n");
+                int deltaSpeed = (rand()%6)/2;
+                gameState->playerVelocity[gameState->currentPlayer] += deltaSpeed;
+                gameState->currentPlayer = (gameState->currentPlayer+1)%2;
+            }
+            else if(keyCode == SDLK_b && !event->key.repeat && event->key.state == SDL_PRESSED)
+            {
+                printf("Break\n");
+                int deltaSpeed = (rand()%6)/2;
+                gameState->playerVelocity[gameState->currentPlayer] -= deltaSpeed;
+                if(gameState->playerVelocity[gameState->currentPlayer] < 1)
+                {
+                    gameState->playerVelocity[gameState->currentPlayer] = 1;
+                }
+                gameState->currentPlayer = (gameState->currentPlayer+1)%2;
             }
             if(keyCode == SDLK_ESCAPE)
             {
@@ -331,6 +352,8 @@ int main(int argc, char** argv)
         SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, 0);
         if(renderer)
         {
+            srand((unsigned int)time(0));
+
             GameState gameState;
             loadMap("test.map", &gameState);
             
@@ -346,7 +369,7 @@ int main(int argc, char** argv)
                 SDL_Event event;
                 while(SDL_PollEvent(&event))
                 {
-                    SDLHandleEvent(&event);    
+                    SDLHandleEvent(&event, &gameState);    
                 }
 
                 render(renderer, &gameState);

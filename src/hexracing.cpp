@@ -29,6 +29,9 @@ int hexSize = 30;
 float hexWidth = (3.0f/2.0f) * hexSize;
 float hexHeight = sqrt(3.0f) * hexSize;
 
+int fontSize = 22;
+TTF_Font* font;
+
 struct Map
 {
     int width;
@@ -84,29 +87,28 @@ void loadMap(char* filename, Map* map)
 }
 
 // TODO: Implement this properly (at the moment it's SUPER inefficient)
-void text(SDL_Renderer* renderer, char* text, int fontSize, int x, int y)
+void text(SDL_Renderer* renderer, char* text, int x, int y)
 {
     int textLength = 0;
     while(text[textLength] != 0)
     {
         ++textLength;
     }
-
-    TTF_Font* Sans = TTF_OpenFont("ubuntumono.ttf", fontSize);
+    
     SDL_Color White = {255, 255, 255};
-    SDL_Surface* surfaceMessage = TTF_RenderText_Solid(Sans, text, White); // as TTF_RenderText_Solid could only be used on SDL_Surface then you have to create the surface first
-    SDL_Texture* Message = SDL_CreateTextureFromSurface(renderer, surfaceMessage); //now you can convert it into a texture
+    SDL_Surface* surfaceMessage = TTF_RenderText_Solid(font, text, White);
+    SDL_Texture* TextMessage = SDL_CreateTextureFromSurface(renderer, surfaceMessage);
 
-    SDL_Rect Message_rect; //create a rect
-    Message_rect.x = x;  //controls the rect's x coordinate 
-    Message_rect.y = y; // controls the rect's y coordinte
-    Message_rect.w = (int)(fontSize*(3.0f/4.0f))*textLength; // controls the width of the rect
+    SDL_Rect Message_rect;
+    Message_rect.x = x;
+    Message_rect.y = y;
+    Message_rect.w = (int)(fontSize*(3.0f/4.0f))*textLength;
     Message_rect.h = fontSize+5; // controls the height of the rect
-
+    printf("%s\n", SDL_GetError());
     //Now since it's a texture, you have to put RenderCopy in your game loop area, the area where the whole code executes
-    SDL_RenderCopy(renderer, Message, NULL, &Message_rect); //you put the renderer's name first, the Message, the crop size(you can ignore this if you don't want to dabble with cropping), and the rect which is the size and coordinate of your texture
+    SDL_RenderCopy(renderer, TextMessage, NULL, &Message_rect); //you put the renderer's name first, the Message, the crop size(you can ignore this if you don't want to dabble with cropping), and the rect which is the size and coordinate of your texture
     SDL_FreeSurface(surfaceMessage);
-    SDL_DestroyTexture(Message);
+    SDL_DestroyTexture(TextMessage);
 }
 
 int round(float x)
@@ -224,13 +226,20 @@ void render(SDL_Renderer* renderer, GameState* gameState)
     {
         mouseHexY = gridHeight-1;
     }
-    mouseX = hexToScreenX(mouseHexX);
-    mouseY = hexToScreenY(mouseHexX, mouseHexY);
+    int roundedMouseX = hexToScreenX(mouseHexX);
+    int roundedMouseY = hexToScreenY(mouseHexX, mouseHexY);
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-    fillRect(renderer, mouseX, mouseY, (int)(hexWidth/2), (int)(hexHeight/2));
+    fillRect(renderer, roundedMouseX, roundedMouseY, (int)(hexWidth/2), (int)(hexHeight/2));
 
     // Draw Text
-    text(renderer, "HexRacer!", 22, 650, 10);
+    text(renderer, "HexRacer!", 650, 10);
+    char mouseXStr[4];
+    char mouseYStr[4];
+    _itoa_s(mouseX, mouseXStr, 10);
+    _itoa_s(mouseY, mouseYStr, 10);
+    text(renderer, mouseXStr, 650, 50);
+    text(renderer, mouseYStr, 750, 50);
+
     SDL_RenderPresent(renderer);
 }
 
@@ -304,6 +313,8 @@ int main(int argc, char** argv)
             gameState.playerLoc[1].x = 1;
             gameState.playerLoc[1].y = 0;
             gameState.map = &map;
+
+            font = TTF_OpenFont("ubuntumono.ttf", fontSize);
 
             running = true;
             while(running)

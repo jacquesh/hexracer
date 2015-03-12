@@ -189,6 +189,14 @@ void render(SDL_Renderer* renderer, GameState* gameState)
                 centreY += (int)(hexHeight/2.0f);
             }
             drawRegularHex(renderer, centreX, centreY, hexSize);
+            
+            char hexType = *((char*)gameState->map->data + (y*gameState->map->width + x));
+            if(hexType != 'X')
+            {
+                int screenX = hexToScreenX(x);
+                int screenY = hexToScreenY(x, y);
+                fillRect(renderer, screenX, screenY, (int)(hexWidth/2), (int)(hexHeight/2));
+            }
         }
     }
 
